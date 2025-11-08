@@ -1,0 +1,270 @@
+import React, { useState, useEffect } from "react";
+import { getSeries, deleteSeries } from "../api/api";
+import Modal from "./Modal";
+import SeriesForm from "./SeriesForm";
+import LoadingSpinner from "./LoadingSpinner";
+import {
+  FiPlus,
+  FiEdit,
+  FiTrash2,
+  FiAlertTriangle,
+  FiTv,
+} from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+
+const ManageSeries = () => {
+  const [series, setSeries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState(null);
+
+  useEffect(() => {
+    fetchSeries();
+  }, []);
+
+  const fetchSeries = async () => {
+    try {
+      setLoading(true);
+      const res = await getSeries();
+      setSeries(res.data);
+    } catch (error) {
+      console.error("Failed to fetch series:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedSeries(null);
+    setShowFormModal(true);
+  };
+
+  const handleEdit = (seriesItem) => {
+    setSelectedSeries(seriesItem);
+    setShowFormModal(true);
+  };
+
+  const handleDelete = (seriesItem) => {
+    setSelectedSeries(seriesItem);
+    setShowDeleteModal(true);
+  };
+
+  const onFormSave = () => {
+    fetchSeries();
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedSeries) return;
+    try {
+      await deleteSeries(selectedSeries._id);
+      setShowDeleteModal(false);
+      setSelectedSeries(null);
+      fetchSeries();
+    } catch (error) {
+      console.error("Failed to delete series:", error);
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+      },
+    },
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-64">
+        <LoadingSpinner size="12" />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"
+        variants={itemVariants}
+      >
+        <div>
+          <h2 className="text-4xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+            TV Series
+          </h2>
+          <p className="text-gray-400 mt-2">Manage your TV series library</p>
+        </div>
+        <motion.button
+          onClick={handleCreate}
+          className="btn-primary inline-flex items-center gap-3 group"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          variants={itemVariants}
+        >
+          <FiPlus className="group-hover:rotate-90 transition-transform duration-300" />
+          Add New Series
+        </motion.button>
+      </motion.div>
+
+      {/* List of Series */}
+      <motion.div className="grid gap-4" variants={containerVariants}>
+        <AnimatePresence>
+          {series.map((seriesItem, index) => (
+            <motion.div
+              key={seriesItem._id}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl shadow-lg border border-gray-700/50 hover:border-gray-600/50 transition-all duration-300 group"
+              variants={itemVariants}
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                delay: index * 0.05,
+              }}
+              whileHover={{
+                scale: 1.02,
+                y: -2,
+              }}
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <motion.img
+                    src={seriesItem.poster}
+                    alt={seriesItem.title}
+                    className="w-20 h-20 rounded-xl object-cover shadow-lg group-hover:shadow-xl transition-shadow duration-300"
+                    whileHover={{ scale: 1.05 }}
+                  />
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-white group-hover:text-green-300 transition-colors duration-300">
+                      {seriesItem.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-3 mt-2">
+                      <span className="text-sm text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">
+                        {seriesItem.year}
+                      </span>
+                      <span className="text-sm text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">
+                        {seriesItem.genre}
+                      </span>
+                      <span className="text-sm text-gray-400 bg-gray-700/50 px-3 py-1 rounded-full">
+                        Seasons: {seriesItem.seasons || 1}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <motion.button
+                    onClick={() => handleEdit(seriesItem)}
+                    className="p-3 bg-blue-600/20 text-blue-400 rounded-xl hover:bg-blue-600/30 transition-all duration-300 border border-blue-500/30"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <FiEdit size={18} />
+                  </motion.button>
+                  <motion.button
+                    onClick={() => handleDelete(seriesItem)}
+                    className="p-3 bg-red-600/20 text-red-400 rounded-xl hover:bg-red-600/30 transition-all duration-300 border border-red-500/30"
+                    whileHover={{ scale: 1.1, rotate: -5 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <FiTrash2 size={18} />
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {series.length === 0 && (
+          <motion.div
+            className="text-center py-16 bg-gray-800/30 rounded-2xl border border-gray-700/50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <FiTv className="mx-auto text-gray-500 text-4xl mb-4" />
+            <h3 className="text-xl text-gray-400 mb-2">No series found</h3>
+            <p className="text-gray-500">
+              Get started by adding your first TV series
+            </p>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* Create/Edit Modal */}
+      <Modal
+        isOpen={showFormModal}
+        onClose={() => setShowFormModal(false)}
+        title={selectedSeries ? "Edit Series" : "Create Series"}
+      >
+        <SeriesForm
+          seriesToEdit={selectedSeries}
+          onClose={() => setShowFormModal(false)}
+          onSave={onFormSave}
+        />
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirm Deletion"
+      >
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+        >
+          <motion.div
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200 }}
+          >
+            <FiAlertTriangle className="mx-auto text-red-500 mb-4" size={64} />
+          </motion.div>
+          <h3 className="text-xl font-normal text-gray-300 my-6">
+            Are you sure you want to delete <br />
+            <span className="font-bold text-white">
+              "{selectedSeries?.title}"
+            </span>
+            ?
+          </h3>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <motion.button
+              onClick={() => setShowDeleteModal(false)}
+              className="btn-secondary flex-1"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Cancel
+            </motion.button>
+            <motion.button
+              onClick={confirmDelete}
+              className="btn-danger flex-1"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Yes, Delete
+            </motion.button>
+          </div>
+        </motion.div>
+      </Modal>
+    </motion.div>
+  );
+};
+
+export default ManageSeries;
