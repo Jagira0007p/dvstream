@@ -118,4 +118,19 @@ body {
   .pagination-btn {
     @apply w-10 h-10 flex items-center justify-center rounded-lg text-gray-200 transition-all duration-300;
   }
+  .nav-link-style {
+    @apply text-gray-300 hover:text-white transition-colors duration-300 font-medium relative group;
+  }
+  .nav-link-underline {
+    @apply absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300;
+  }
+
+  /* New class for a smaller logout button */
+  .btn-danger-small {
+    @apply bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-2 px-5 rounded-xl shadow-lg transition-all duration-300;
+  }
+
+  .mobile-nav-link {
+    @apply block text-gray-300 hover:text-white transition-colors duration-300 font-medium py-2;
+  }
 }
